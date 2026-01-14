@@ -121,35 +121,43 @@ export default function Home() {
   }
 
   const handleDownload = () => {
-  if (!generatedImage?.url) return
+    if (!generatedImage?.url) return
 
-  // Check if URL is base64 or regular URL
-  const isBase64 = generatedImage.url.startsWith('data:')
+    // Check if URL is base64 or regular URL
+    const isBase64 = generatedImage.url.startsWith('data:')
 
-  const link = document.createElement('a')
-  link.href = generatedImage.url
+    const link = document.createElement('a')
+    link.href = generatedImage.url
 
-  if (isBase64) {
-    // For base64, we need to use fetch to get blob
-    fetch(generatedImage.url)
-      .then(res => res.blob())
-      .then(blob => {
-        const blobUrl = URL.createObjectURL(blob)
-        link.href = blobUrl
-        link.download = `artistic-image-${selectedStyle}-${Date.now()}.png`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(blobUrl)
-      })
-  } else {
-    // For regular URLs, direct download
-    link.download = `artistic-image-${selectedStyle}-${Date.now()}.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    if (isBase64) {
+      // For base64, we need to use fetch to get the blob
+      fetch(generatedImage.url)
+        .then(res => res.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob)
+          link.href = blobUrl
+          link.download = `artistic-image-${selectedStyle}-${Date.now()}.png`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(blobUrl)
+        })
+    } else {
+      // For regular URLs, direct download
+      link.download = `artistic-image-${selectedStyle}-${Date.now()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
   }
-}
+
+  const handleReset = () => {
+    setSubject('')
+    setSelectedStyle('')
+    setSelectedSize('1024x1024')
+    setGeneratedImage(null)
+    setError('')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
@@ -249,7 +257,7 @@ export default function Home() {
               <CardHeader>
                 <CardTitle>Image Size</CardTitle>
                 <CardDescription>
-                  Choose the dimensions for your image
+                  Choose dimensions for your image
                 </CardDescription>
               </CardHeader>
               <CardContent>
