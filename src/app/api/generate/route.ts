@@ -45,9 +45,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Ensure images directory exists
-    const imagesDir = await ensureImagesDir()
-
     // Get ZAI instance
     const zai = await getZAIInstance()
 
@@ -63,29 +60,33 @@ export async function POST(request: NextRequest) {
     }
 
     const imageBase64 = response.data[0].base64
+    const filename = `${style || 'image'}-${Date.now()}.png`
+    let imageUrl = ''
+    let isBase64 = false
 
-    // Convert base64 to buffer
-    const buffer = Buffer.from(imageBase64, 'base64')
-
-    // Generate unique filename
-    const timestamp = Date.now()
-    const stylePrefix = style ? `${style}-` : ''
-    const filename = `${stylePrefix}${timestamp}.png`
-    const filepath = path.join(imagesDir, filename)
-
-    // Save image to public directory
-    await writeFile(filepath, buffer)
-
-    // Return the image URL
-    const imageUrl = `/generated-images/${filename}`
+    // Try to save to filesystem
+    try {
+      const imagesDir = await ensureImagesDir()
+      const filepath = path.join(imagesDir, filename)
+      const buffer = Buffer.from(imageBase64, 'base64')
+      await writeFile(filepath, buffer)
+      imageUrl = `/generated-images/${filename}`
+      console.log(`Image saved to: ${filepath}`)
+    } catch (fsError: any) {
+      // If filesystem write fails, return base64 directly
+      console.warn('Filesystem write failed, returning base64:', fsError.message)
+      imageUrl = `data:image/png;base64,${imageBase64}`
+      isBase64 = true
+    }
 
     return NextResponse.json({
       success: true,
       imageUrl: imageUrl,
+      isBase64: isBase64,
       prompt: prompt,
       size: size,
       style: style,
-      filename: filename,
+      filename: isBase64 ? filename : undefined,
     })
   } catch (error: any) {
     console.error('Error generating image:', error)
